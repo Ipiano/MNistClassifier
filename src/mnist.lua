@@ -2,10 +2,12 @@ require("struct")
 require("torch")
 require("itorch")
 
+local data = require("./dataset")
+
 local M = {}
 
 --[[Reads a set of images from a binary ubtye file --]]
-function M.read_images( fileName, printData )
+function M.read_images( fileName, dataSize )
     local inp = assert(io.open(fileName, "rb"), "Unable to open image file " .. fileName)
 
     local MAGICNUMBER = 2051
@@ -16,6 +18,7 @@ function M.read_images( fileName, printData )
     assert(magicMatch == MAGICNUMBER, "Magic number mismatch in " .. fileName .. ": " .. MAGICNUMBER .. " vs. " .. magicMatch)
 
     print(count .. " items size " .. w .. "x" .. h .. " in file " .. fileName)
+    count = math.min(count, dataSize)
 
     local images = {}
 
@@ -33,17 +36,11 @@ function M.read_images( fileName, printData )
 
     local out = torch.Tensor(images)
 
-    if printData then
-        for i=1, math.min(10, count) do
-           print(out[i])
-        end
-    end
-
     return out
 end
 
 --[[Reads a set of labels from a binary ubtye file --]]
-function M.read_labels( fileName, printData )
+function M.read_labels( fileName, dataSize )
     local inp = assert(io.open(fileName, "rb"), "Unable to open labels file " .. fileName)
 
     local MAGICNUMBER = 2049
@@ -54,6 +51,7 @@ function M.read_labels( fileName, printData )
     assert(magicMatch == MAGICNUMBER, "Magic number mismatch in " .. fileName .. ": " .. MAGICNUMBER .. " vs. " .. magicMatch)
 
     print(count .. " labels  in file " .. fileName)
+    count = math.min(dataSize, count)
 
     local labels = {}
     
@@ -63,40 +61,20 @@ function M.read_labels( fileName, printData )
 
     local out = torch.Tensor(labels)
 
-    if printData then
-        for i=1, math.min(10, count) do
-            print(out[i])
-        end
-    end
-
     return out
 end
 
 --[[Reads a pair image file and label file with the same base name, ending in '-images-idx3-ubyte' and '-labels-idx1-ubyte' respectively --]]
-function M.read_data( fileBase, printData )
+function M.read_data( fileBase, dataSize )
     local imgFile = fileBase .. "-images-idx3-ubyte"
     local labelFile = fileBase .. "-labels-idx1-ubyte"
 
-    local images = M.read_images(imgFile, printData)
-    local labels = M.read_labels(labelFile, printData)
+    local images = M.read_images(imgFile, dataSize)
+    local labels = M.read_labels(labelFile, dataSize)
 
     assert(images:size(1) == labels:size(1), "Image set and label set are different sizes")
 
-    local out = {
-        data = images,--[{ {1, 1000}, {}, {}, {} }],
-        labels = labels,--[{ {1, 1000} }],
-
-        size = function(self) 
-            return self.data:size(1) 
-        end
-    }
-
-    setmetatable(out,
-    {
-        __index = function(self, i)
-            return {self.data[i], self.labels[i]}
-        end
-    })
+    out = data.make_dataset(images, labels)
 
     return out
 end
