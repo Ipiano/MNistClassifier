@@ -1,6 +1,8 @@
 require("nn");
 
-function build_conv_net()
+local M = {}
+
+function M.build_mnist_net()
     net = nn.Sequential()
     
     --Add first layer of spatial convolution
@@ -18,10 +20,10 @@ function build_conv_net()
     net:add(nn.SpatialMaxPooling(2, 2, 2, 2))
 
     --Reshape 3D tensor into 1D tensor for linear layers to use
-    net:add(nn.View(50*5*5))
+    net:add(nn.View(50*2*2))
 
     --Two hidden layers, 1 output
-    net:add(nn.Linear(50*5*5, 100))
+    net:add(nn.Linear(50*2*2, 100))
     net:add(nn.ReLU())
     net:add(nn.Linear(100, 10))
     net:add(nn.ReLU())
@@ -29,3 +31,5 @@ function build_conv_net()
 
     return net
 end
+
+return M

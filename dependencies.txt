@@ -1,0 +1,2 @@
+lua packages:
+    struct

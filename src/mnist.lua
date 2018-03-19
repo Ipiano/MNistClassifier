@@ -1,7 +1,11 @@
 require("struct")
+require("torch")
+require("itorch")
+
+local M = {}
 
 --[[Reads a set of images from a binary ubtye file --]]
-function read_images( fileName, printData )
+function M.read_images( fileName, printData )
     local inp = assert(io.open(fileName, "rb"), "Unable to open image file " .. fileName)
 
     local MAGICNUMBER = 2051
@@ -20,32 +24,27 @@ function read_images( fileName, printData )
         for j=1, h do
             local row = {}
             for k=1, w do
-                row[k] = inp:read(1)
+                row[k] = inp:read(1):byte()
             end
             image[j] = row
         end
-        images[i] = image
+        images[i] = {image}
     end
+
+    local out = torch.Tensor(images)
 
     if printData then
         for i=1, math.min(10, count) do
-            for j=1, h do
-                local row = ""
-                for k=1, w do
-                    row = row .. string.format("%3i", string.byte(images[i][j][k])) .. " "
-                end
-                print(row)
-            end
-            print("")
+           print(out[i])
         end
     end
 
-    return images
+    return out
 end
 
 --[[Reads a set of labels from a binary ubtye file --]]
-function read_labels( fileName, printData )
-    local inp = assert(io.open(fileName, "rb"), "Unable to open image file " .. fileName)
+function M.read_labels( fileName, printData )
+    local inp = assert(io.open(fileName, "rb"), "Unable to open labels file " .. fileName)
 
     local MAGICNUMBER = 2049
 
@@ -56,27 +55,50 @@ function read_labels( fileName, printData )
 
     print(count .. " labels  in file " .. fileName)
 
-    local labels = {};
-    inp:read(count):gsub(".", function(c) table.insert(labels, c) end)
+    local labels = {}
+    
+    --Gotta +1 all labels because they are the actual number there; but lua is 1-indexed
+    --so label 0 is not valid
+    inp:read(count):gsub(".", function(c) table.insert(labels, c:byte() + 1) end)
+
+    local out = torch.Tensor(labels)
 
     if printData then
         for i=1, math.min(10, count) do
-            print(string.byte(labels[i]))
+            print(out[i])
         end
     end
 
-    return labels
+    return out
 end
 
 --[[Reads a pair image file and label file with the same base name, ending in '-images-idx3-ubyte' and '-labels-idx1-ubyte' respectively --]]
-function read_data( fileBase, printData )
+function M.read_data( fileBase, printData )
     local imgFile = fileBase .. "-images-idx3-ubyte"
     local labelFile = fileBase .. "-labels-idx1-ubyte"
 
-    local images = read_images(imgFile, printData)
-    local labels = read_labels(labelFile, printData)
+    local images = M.read_images(imgFile, printData)
+    local labels = M.read_labels(labelFile, printData)
 
-    assert(table.getn(images) == table.getn(labels), "Image set and label set are different sizes")
+    assert(images:size(1) == labels:size(1), "Image set and label set are different sizes")
 
-    return {images, labels}
+    local out = {
+        data = images,--[{ {1, 1000}, {}, {}, {} }],
+        labels = labels,--[{ {1, 1000} }],
+
+        size = function(self) 
+            return self.data:size(1) 
+        end
+    }
+
+    setmetatable(out,
+    {
+        __index = function(self, i)
+            return {self.data[i], self.labels[i]}
+        end
+    })
+
+    return out
 end
+
+return M
