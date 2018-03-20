@@ -4,6 +4,8 @@ local build = require("./build")
 local test = require("./test")
 local train = require("./train")
 local mnist = require("./mnist")
+local batch = require("./minibatch")
+local data = require("./dataset")
 
 require("os")
 math.randomseed(os.time())
@@ -11,18 +13,16 @@ math.randomseed(os.time())
 printedData = 0
 dataSize = 4294967296
 useGPU = false
-epochs = 10
+epochs = 25
 transforms = 0
+minibatch = -1
 for i=1, table.getn(arg) do
     if arg[i] == "--make_images" then
-        printedData = nil
         if i < table.getn(arg) then
             printedData = tonumber(arg[i+1])
         end
 
-        if printedData == nil then
-            printedData = 100
-        end
+        printedData = printedData or 100
 
         printedData = math.floor(printedData)
         assert(dataSize >= 0, "Must have a image print size")
@@ -45,6 +45,14 @@ for i=1, table.getn(arg) do
 
     if arg[i] == "--cuda" then
         useGPU = true
+    end
+
+    if arg[i] == "--minibatch" then
+        minibatch = 10
+        if i < table.getn(arg) then
+            minibatch = math.floor(tonumber(arg[i+1]))
+            assert(epochs >= 0, "Must have a positive size minibatch")
+        end
     end
 end
 
@@ -75,9 +83,6 @@ if printedData > 0 then
     end
 end
 
-print("\nNormalizing training data...")
-mean, stdev = prep.normalize(trainData.data)
-
 print("\nCreating neural net...")
 net = build.build_mnist_net()
 crit = criterion.build_mnist_criterion()
@@ -88,21 +93,27 @@ transformed = prep.transformSet(trainData, transforms)
 trainData.data = torch.cat(trainData.data, transformed.data, 1)
 trainData.labels = torch.cat(trainData.labels, transformed.labels, 1)
 
+if minibatch < 0 then minibatch = trainData:size() end
+miniData = torch.Tensor(minibatch, 1, trainData[1][1]:size(2), trainData[1][1]:size(3))
+miniLabels = torch.Tensor(minibatch)
+minibatchData = data.make_dataset(miniData, miniLabels)
+
 if useGPU then
     print("\nConverting to CUDA types...")
     local data = require("./dataset")
     require("cunn")
 
-    trainData.data = trainData.data:cuda()
-    trainData.labels = trainData.labels:cuda()
-    testData.data = testData.data:cuda()
-    testData.labels = testData.labels:cuda()
+    minibatchData.data = minibatchData.data:cuda()
+    minibatchData.labels = minibatchData.labels:cuda()
     net = net:cuda()
     crit = crit:cuda()
 end
 
+print("\nNormalizing training data...")
+mean, stdev = prep.normalize(trainData.data)
+
 print("\nTraining...")
-train.train_nn(net, crit, trainData, epochs)
+train.train_minibatch_nn(net, crit, trainData, minibatchData, epochs)
 
 print("\nNormalizing testing data...")
 testData.data[{{},{},{},{}}]:add(-mean)
@@ -111,14 +122,23 @@ testData.data[{{},{},{},{}}]:div(stdev)
 print("\nTesting...")
 scores = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 counts = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-for i=1, testData:size() do
-    local truth = testData[i][2]
-    local guess = net:forward(testData[i][1])
-    local confidences, indices = torch.sort(guess, true)
+k=1
+for i=1, math.ceil(testData:size()/minibatchData:size()) do
+    minibatchData = batch.make_minibatch(testData, minibatchData, i)
 
-    counts[truth] = counts[truth] + 1
-    if truth == indices[1] then
-        scores[truth] = scores[truth] + 1
+    local guess = net:forward(minibatchData.data)
+
+    for j=1, minibatchData:size() do
+        local truth = testData[k][2]
+
+        local confidences, indices = torch.sort(guess[j], true)
+
+        counts[truth] = counts[truth] + 1
+        if truth == indices[1] then
+            scores[truth] = scores[truth] + 1
+        end
+
+        k = k+1
     end
 end
 
