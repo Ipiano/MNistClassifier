@@ -8,7 +8,10 @@ local batch = require("./minibatch")
 local data = require("./dataset")
 
 require("os")
+require("optim")
+
 math.randomseed(os.time())
+torch.setdefaulttensortype('torch.FloatTensor')
 
 printedData = 0
 dataSize = 4294967296
@@ -16,6 +19,7 @@ useGPU = false
 epochs = 25
 transforms = 0
 minibatch = -1
+makeGraph = false
 for i=1, table.getn(arg) do
     if arg[i] == "--make_images" then
         if i < table.getn(arg) then
@@ -45,6 +49,10 @@ for i=1, table.getn(arg) do
 
     if arg[i] == "--cuda" then
         useGPU = true
+    end
+
+    if arg[i] == "--graph" then
+        makeGraph = true
     end
 
     if arg[i] == "--minibatch" then
@@ -112,46 +120,29 @@ end
 print("\nNormalizing training data...")
 mean, stdev = prep.normalize(trainData.data)
 
-print("\nTraining...")
-train.train_minibatch_nn(net, crit, trainData, minibatchData, epochs)
-
 print("\nNormalizing testing data...")
 testData.data[{{},{},{},{}}]:add(-mean)
 testData.data[{{},{},{},{}}]:div(stdev)
 
-print("\nTesting...")
-scores = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-counts = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-k=1
-for i=1, math.ceil(testData:size()/minibatchData:size()) do
-    minibatchData = batch.make_minibatch(testData, minibatchData, i)
+if makeGraph then
+    --Make loggers to output graph files
+    trainLogger = optim.Logger(paths.concat("./logs", 'train.log'))
+    testLogger = optim.Logger(paths.concat("./logs", 'test.log'))
 
-    local guess = net:forward(minibatchData.data)
+    trainLogger:display(false)
+    testLogger:display(false)
+    
+    for i=1, epochs do
+        print("\nTraining...")
+        train.train_minibatch_nn(net, crit, trainData, minibatchData, 1, trainLogger)
 
-    for j=1, minibatchData:size() do
-        local truth = testData[k][2]
-
-        local confidences, indices = torch.sort(guess[j], true)
-
-        counts[truth] = counts[truth] + 1
-        if truth == indices[1] then
-            scores[truth] = scores[truth] + 1
-        end
-
-        k = k+1
+        print("\nTesting...")
+        test.test_nn(net, testData, minibatchData, testLogger)
     end
+else
+    print("\nTraining...")
+    train.train_minibatch_nn(net, crit, trainData, minibatchData, epochs)
+
+    print("\nTesting...")
+    test.test_nn(net, testData, minibatchData, testLogger)
 end
-
-scorestr = ""
-for i=1, 10 do
-    scorestr = scorestr .. tonumber(string.format("%.2f",100*scores[i]/counts[i])) .. "% "
-end
-
-print("Class Scores: " .. scorestr)
-
-correct = 0
-for i, s in ipairs(scores) do
-    correct = correct + s
-end
-
-print("Score: " .. tonumber(string.format("%.2f", 100*correct/testData:size())) .. "%")

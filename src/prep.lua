@@ -19,7 +19,7 @@ function M.transformImage(imageTensor, mode)
     local matrix1 = torch.Tensor(2, 2):fill(0)
     local matrix2 = torch.Tensor(2, 2):fill(0)
 
-    local angle = math.random() * math.pi/2 - math.pi/4
+    local angle = math.random() * math.pi/8 - math.pi/16
 
     --print("Rotate to angle "..angle*180/math.pi)
     matrix1[1][1] = math.cos(angle)
@@ -34,8 +34,8 @@ function M.transformImage(imageTensor, mode)
     matrix2[2][1] = shearx
     matrix2[1][2] = sheary
 
-    local scalex = math.random() * 0.5 + 0.5
-    local scaley = math.random() * 0.5 + 0.5
+    local scalex = math.random() * 0.25 + 0.75
+    local scaley = math.random() * 0.25 + 0.75
 
     --print("Scale "..scalex..", "..scaley)
     matrix2[1][1] = 1/scalex
