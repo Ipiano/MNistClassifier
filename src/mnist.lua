@@ -1,6 +1,5 @@
 require("struct")
 require("torch")
-require("itorch")
 
 local data = require("./dataset")
 

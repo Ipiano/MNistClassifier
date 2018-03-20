@@ -67,18 +67,21 @@ print("\nCreating neural net...")
 net = build.build_mnist_net()
 crit = criterion.build_mnist_criterion()
 
-trainSet = trainData
 if useGPU then
+    print("\nConverting to CUDA types...")
     local data = require("./dataset")
     require("cunn")
 
-    trainSet = data.make_dataset(trainData.data:cuda(), trainData.labels:cuda())
+    trainData.data = trainData.data:cuda()
+    trainData.labels = trainData.labels:cuda()
+    testData.data = testData.data:cuda()
+    testData.labels = testData.labels:cuda()
     net = net:cuda()
     crit = crit:cuda()
 end
 
 print("\nTraining...")
-train.train_nn(net, crit, trainSet)
+train.train_nn(net, crit, trainData)
 
 print("\nNormalizing testing data...")
 testData.data[{{},{},{},{}}]:add(-mean)
