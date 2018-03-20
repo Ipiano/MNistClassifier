@@ -14,7 +14,6 @@ function M.test_nn(net, data, minidata, logger)
         minidata = batch.make_minibatch(data, minidata, i)
     
         local guess = net:forward(minidata.data)
-        matrix:batchAdd(guess, minidata.labels)
 
         for j=1, minidata:size() do
             local truth = data[k][2]
