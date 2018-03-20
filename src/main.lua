@@ -101,6 +101,8 @@ if useGPU then
     crit = crit:cuda()
 end
 
+print(net:getParameters())
+
 print("\nTraining...")
 train.train_nn(net, crit, trainData, epochs)
 
