@@ -3,7 +3,7 @@ local gm = require("graphicsmagick")
 local M = {}
 
 function M.save_tensor(path, tensor)
-    image = gm.Image(tensor, "I", "DHW")
+    local image = gm.Image(tensor, "I", "DHW")
 
     image:save(path)
 end

@@ -65,6 +65,10 @@ end
 
 --[[Reads a pair image file and label file with the same base name, ending in '-images-idx3-ubyte' and '-labels-idx1-ubyte' respectively --]]
 function M.read_data( fileBase, dataSize )
+    if dataSize == nil then
+        dataSize = 4294967296
+    end
+    
     local imgFile = fileBase .. "-images-idx3-ubyte"
     local labelFile = fileBase .. "-labels-idx1-ubyte"
 
