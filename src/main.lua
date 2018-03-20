@@ -102,7 +102,7 @@ if useGPU then
 end
 
 print("\nTraining...")
-train.train_nn(net, crit, trainData)
+train.train_nn(net, crit, trainData, epochs)
 
 print("\nNormalizing testing data...")
 testData.data[{{},{},{},{}}]:add(-mean)
