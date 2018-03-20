@@ -28,8 +28,14 @@ function M.read_images( fileName, dataSize )
             for k=1, w do
                 row[k] = inp:read(1):byte()
             end
+            row[w+1] = 0
             image[j] = row
         end
+        local extraRow = {}
+        for k=1, w+1 do
+            extraRow[k] = 0
+        end
+        image[h+1] = extraRow
         images[i] = {image}
     end
 
