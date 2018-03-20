@@ -1,18 +1,21 @@
 require("torch")
+require("optim")
 
 local M = {}
 
 function M.test_nn(net, data, minidata, logger)
-    scores = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-    counts = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-    k=1
-    t=1
+    local scores = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+    local counts = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+    local k=1
+    local t=1
+
     xlua.progress(t, data:size())
     for i=1, math.ceil(data:size()/minidata:size()) do
         minidata = batch.make_minibatch(data, minidata, i)
     
         local guess = net:forward(minidata.data)
-    
+        matrix:batchAdd(guess, minidata.labels)
+
         for j=1, minidata:size() do
             local truth = data[k][2]
     
@@ -30,14 +33,14 @@ function M.test_nn(net, data, minidata, logger)
         xlua.progress(t, data:size())
     end
     
-    scorestr = ""
+    local scorestr = ""
     for i=1, 10 do
         scorestr = scorestr .. tonumber(string.format("%.2f",100*scores[i]/counts[i])) .. "% "
     end
     
     print("Class Scores: " .. scorestr)
     
-    correct = 0
+    local correct = 0
     for i, s in ipairs(scores) do
         correct = correct + s
     end

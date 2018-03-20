@@ -131,7 +131,7 @@ if makeGraph then
 
     trainLogger:display(false)
     testLogger:display(false)
-    
+
     for i=1, epochs do
         print("\nTraining...")
         train.train_minibatch_nn(net, crit, trainData, minibatchData, 1, trainLogger)
