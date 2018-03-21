@@ -15,11 +15,9 @@ torch.setdefaulttensortype('torch.FloatTensor')
 
 printedData = 0
 dataSize = 4294967296
-useGPU = false
 epochs = 25
 transforms = 0
 minibatch = -1
-makeGraph = false
 deforms = 0
 for i=1, table.getn(arg) do
     if arg[i] == "--make_images" then
@@ -67,6 +65,10 @@ for i=1, table.getn(arg) do
 
     if arg[i] == "--graph" then
         makeGraph = true
+    end
+
+    if arg[i] == "--profile" then
+        profile = true
     end
 
     if arg[i] == "--minibatch" then
@@ -160,14 +162,14 @@ if makeGraph then
 
     for i=1, epochs do
         print("\nTraining...")
-        train.train_minibatch_nn(net, crit, trainData, minibatchData, 1, trainLogger)
+        train.train_minibatch_nn(net, crit, trainData, minibatchData, 1, trainLogger, nil, nil, nil, profile)
 
         print("\nTesting...")
         test.test_nn(net, testData, minibatchData, testLogger)
     end
 else
     print("\nTraining...")
-    train.train_minibatch_nn(net, crit, trainData, minibatchData, epochs)
+    train.train_minibatch_nn(net, crit, trainData, minibatchData, epochs, nil, nil, nil, nil, profile)
 
     print("\nTesting...")
     test.test_nn(net, testData, minibatchData, testLogger)
