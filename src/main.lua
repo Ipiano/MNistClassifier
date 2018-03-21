@@ -20,6 +20,7 @@ epochs = 25
 transforms = 0
 minibatch = -1
 makeGraph = false
+deforms = 0
 for i=1, table.getn(arg) do
     if arg[i] == "--make_images" then
         if i < table.getn(arg) then
@@ -47,6 +48,19 @@ for i=1, table.getn(arg) do
         assert(transforms >= 0, "Must have a positive number of transforms")
     end
 
+    if arg[i] == "--deforms" and i < table.getn(arg) then
+        deforms = math.floor(tonumber(arg[i+1]))
+        assert(deforms >= 0, "Must have a positive number of deforms")
+
+        if(i < table.getn(arg)-1) then
+            sigma = tonumber(arg[i+2])
+        end
+
+        if(i < table.getn(arg)-2) and sigma then
+            alpha = tonumber(arg[i+3])
+        end
+    end
+
     if arg[i] == "--cuda" then
         useGPU = true
     end
@@ -72,25 +86,6 @@ trainData = mnist.read_data("./data/train", dataSize)
 print("\nLoading testing data...")
 testData = mnist.read_data("./data/t10k", 4294967296)
 
-if printedData > 0 then
-    local images = require("./images")
-    require "lfs"
-
-    lfs.mkdir("./images")
-    lfs.mkdir("./images/testingImages")
-    lfs.mkdir("./images/trainingImages")
-
-    print("\nSaving up to "..printedData.." images from each set")
-    for i=1, printedData do
-        if testData:size() >= i then
-            images.save_tensor("./images/testData/"..i..".bmp", testData[i][1])
-        end
-        if trainData:size() >= i then
-            images.save_tensor("./images/trainData/"..i..".bmp", trainData[i][1])
-        end
-    end
-end
-
 print("\nCreating neural net...")
 net = build.build_mnist_net()
 crit = criterion.build_mnist_criterion()
@@ -98,8 +93,39 @@ crit = criterion.build_mnist_criterion()
 print("\nCreating "..transforms.." transformed copies of each image...")
 transformed = prep.transformSet(trainData, transforms)
 
-trainData.data = torch.cat(trainData.data, transformed.data, 1)
-trainData.labels = torch.cat(trainData.labels, transformed.labels, 1)
+print("\nCreating "..deforms.." deformed copies of each image...")
+deformed = prep.deformSet(trainData, deforms, sigma, alpha)
+
+if printedData > 0 then
+    local images = require("./images")
+    require "lfs"
+
+    lfs.mkdir("./images")
+    lfs.mkdir("./images/testingImages")
+    lfs.mkdir("./images/trainingImages")
+    lfs.mkdir("./images/deformedImages")
+    lfs.mkdir("./images/transformedImages")
+
+    print("\nSaving up to "..printedData.." images from each set")
+    for i=1, printedData do
+        if testData:size() >= i then
+            images.save_tensor("./images/testingImages/"..i..".bmp", testData[i][1])
+        end
+        if trainData:size() >= i then
+            images.save_tensor("./images/trainingImages/"..i..".bmp", trainData[i][1])
+        end
+        if transformed:size() >= i then
+            images.save_tensor("./images/transformedImages/"..i..".bmp", transformed[i][1])
+        end
+        if deformed:size() >= i then
+            images.save_tensor("./images/deformedImages/"..i..".bmp", deformed[i][1])
+        end
+    end
+end
+
+
+trainData.data:cat({transformed.data, deformed.data}, 1)
+trainData.labels:cat({transformed.labels, deformed.labels}, 1)
 
 if minibatch < 0 then minibatch = trainData:size() end
 miniData = torch.Tensor(minibatch, 1, trainData[1][1]:size(2), trainData[1][1]:size(3))
