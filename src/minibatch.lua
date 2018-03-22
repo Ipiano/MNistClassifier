@@ -5,7 +5,7 @@ function M.make_minibatch(data, minidata, batchNum, shuffle)
     local start = (batchNum-1) * batchSize + 1
     
     k=1
-    for i=start, start+batchSize-1 do
+    for i=start, math.min(start+batchSize-1, data:size()) do
         if shuffle ~= nil then
             minidata.data[k] = data.data[shuffle[i]]:clone()
             minidata.labels[k] = data.labels[shuffle[i]]

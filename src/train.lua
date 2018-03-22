@@ -89,7 +89,7 @@ function M.train_minibatch_nn(net, criterion, data, minidata, epochs, logger, le
     
             -- Perform SGD step on current mini-batch:
             sgdState = sgdState or {
-                learningRate = learningRate or 0.005,
+                learningRate = (learningRate or 0.005) * math.pow(0.3, M._global_epochs % 100),
                 momentum = momentum or 0,
                 learningRateDecay = decay or 5e-7
             }
