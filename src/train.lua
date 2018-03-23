@@ -16,7 +16,7 @@ end
 
 -- Training method adapted from https://github.com/torch/demos/blob/master/train-a-digit-classifier/train-on-mnist.lua
 M._global_epochs = 1
-function M.train_minibatch_nn(net, criterion, data, minidata, epochs, logger, learningRate, momentum, decay, timer)
+function M.train_minibatch_nn(net, criterion, data, minidata, epochs, logger, learningRate, momentum, decay, timer, learning_mul, learning_mod)
     local classes = {'1','2','3','4','5','6','7','8','9','10'}
     local matrix = optim.ConfusionMatrix(classes)
 
@@ -89,7 +89,7 @@ function M.train_minibatch_nn(net, criterion, data, minidata, epochs, logger, le
     
             -- Perform SGD step on current mini-batch:
             sgdState = sgdState or {
-                learningRate = (learningRate or 0.005) * math.pow(0.3, M._global_epochs % 100),
+                learningRate = (learningRate or 0.005) * math.pow(learning_mul or 1, math.floor((M._global_epochs-2) / (learning_mod or 100))),
                 momentum = momentum or 0,
                 learningRateDecay = decay or 5e-7
             }
