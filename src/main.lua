@@ -104,7 +104,7 @@ for i=1, table.getn(arg) do
 
     --Use miniBatches of size n
     --Default 10
-    if arg[i] == "--miniBatch" then
+    if arg[i] == "--minibatch" then
         if i < table.getn(arg) then
             miniBatch = math.floor(tonumber(arg[i+1]))
         end
