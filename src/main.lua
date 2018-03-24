@@ -160,13 +160,17 @@ local deformed
 if transforms then
     print("\nCreating "..(transforms).." transformed copies of each image...")
 
-    transformed = prep.transformSet(trainData, useGPU, transforms)
+    --Hardcoded false because I didn't realize until too late that
+    --torch/image doesn't support cuda
+    transformed = prep.transformSet(trainData, false, transforms)
 end
 
 if deforms then
     print("\nCreating "..(deforms).." deformed copies of each image...")
 
-    deformed = prep.deformSet(trainData, useGPU, deforms, sigma, alpha)
+    --Hardcoded false because I didn't realize until too late that
+    --torch/image doesn't support cuda
+    deformed = prep.deformSet(trainData, false, deforms, sigma, alpha)
 end
 
 if printedData then
