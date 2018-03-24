@@ -55,7 +55,7 @@ M.Dataset = function(data, labels, defaultLimit)
                 k=k+1
             end
 
-            dst:limit(k)
+            dst:limit(k-1)
         
             return dst
         end,
