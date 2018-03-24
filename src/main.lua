@@ -4,7 +4,6 @@ local build = require("./build")
 local test = require("./test")
 local train = require("./train")
 local mnist = require("./mnist")
-local batch = require("./minibatch")
 local data = require("./dataset")
 
 require("os")
@@ -14,10 +13,13 @@ math.randomseed(os.time())
 torch.setdefaulttensortype('torch.FloatTensor')
 
 --Default to using all possible data
-dataSize = 4294967296
+local dataSize = 4294967296
 
 --Default to 25 epochs
-epochs = 25
+local epochs = 25
+
+--Declare all other arg variables
+local printedData, transforms, deforms, alpha, sigma, epoch_learning_mod, epoch_learning_mul, useGPU, makeGraph, profile, miniBatch
 
 for i=1, table.getn(arg) do
 
@@ -28,7 +30,6 @@ for i=1, table.getn(arg) do
         end
 
         printedData = printedData or 100
-
         printedData = math.floor(printedData)
         assert(dataSize >= 0, "Must have a positive image print count")
     end
@@ -110,12 +111,12 @@ for i=1, table.getn(arg) do
         end
 
         miniBatch = miniBatch or 10
-        assert(epochs > 0, "Must have a positive non-0 size miniBatch")
+        assert(miniBatch > 1, "Must have a positive size miniBatch > 1")
     end
 end
 
 --Make logging folder based on parameters regardless of if it'll be used
-logFolder = epochs.."-epochs_"..dataSize.."-data"
+local logFolder = epochs.."-epochs_"..dataSize.."-data"
 if miniBatch then
     logFolder = logFolder.."_"..miniBatch.."-minibatch"
 end
@@ -134,22 +135,39 @@ end
 
 
 print("Loading training data...")
-trainData = mnist.read_data("./data/train", dataSize)
+local trainData = mnist.read_data("./data/train", dataSize)
 
 --Regardless of how much training data is used
 --read the whole test set; training is the long part
 print("\nLoading testing data...")
-testData = mnist.read_data("./data/t10k", 4294967296)
+local testData = mnist.read_data("./data/t10k", 4294967296)
+
+--If no minibatch specified, make 'batch' of entire data set
+miniBatch = miniBatch or trainData:size()
+
+--Verify that the minibatch size divides the training and testing set sizes
+assert(trainData:size() >= miniBatch and trainData:size() % miniBatch == 0, "Minibatch size must divide original training set size")
+assert(testData:size() >= miniBatch and testData:size() % miniBatch == 0, "Minibatch size must divide testing set size")
 
 print("\nCreating neural net...")
-net = build.build_mnist_net()
-crit = criterion.build_mnist_criterion()
+local net = build.build_mnist_net()
+local crit = criterion.build_mnist_criterion()
 
-print("\nCreating "..(transforms or 0).." transformed copies of each image...")
-transformed = prep.transformSet(trainData, transforms or 0)
+local transformed
+local deformed
 
-print("\nCreating "..(deforms or 0).." deformed copies of each image...")
-deformed = prep.deformSet(trainData, deforms or 0, sigma, alpha)
+--Closure to transform and/or deform a batch of the input data
+if transforms then
+    print("\nCreating "..(transforms).." transformed copies of each image...")
+
+    transformed = prep.transformSet(trainData, useGPU, transforms)
+end
+
+if deforms then
+    print("\nCreating "..(deforms).." deformed copies of each image...")
+
+    deformed = prep.deformSet(trainData, useGPU, deforms, sigma, alpha)
+end
 
 if printedData then
     local images = require("./images")
@@ -169,48 +187,53 @@ if printedData then
         if trainData:size() >= i then
             images.save_tensor("./images/trainingImages/"..i..".bmp", trainData[i][1])
         end
-        if transformed:size() >= i then
+        if transforms and transformed:size() >= i then
             images.save_tensor("./images/transformedImages/"..i..".bmp", transformed[i][1])
         end
-        if deformed:size() >= i then
+        if deforms and deformed:size() >= i then
             images.save_tensor("./images/deformedImages/"..i..".bmp", deformed[i][1])
         end
     end
 end
 
-trainData.data:cat({transformed.data, deformed.data}, 1)
-trainData.labels:cat({transformed.labels, deformed.labels}, 1)
+if transforms then
+    trainData.data = trainData.data:cat(transformed.data, 1)
+    trainData.labels = trainData.labels:cat(transformed.labels, 1)
+end
 
---If no minibatch specified, make 'batch' of entire data set
-miniBatch = miniBatch or trainData:size()
+if deforms then
+    trainData.data = trainData.data:cat(deformed.data, 1)
+    trainData.labels = trainData.labels:cat(deformed.labels, 1)
+end
+
+trainData:limit(trainData:reserved())
 
 --Build data set to hold minibatches
-miniData = torch.Tensor(miniBatch, 1, trainData[1][1]:size(2), trainData[1][1]:size(3))
-miniLabels = torch.Tensor(miniBatch)
-miniBatchData = data.make_dataset(miniData, miniLabels)
+local miniBatchData = data.Dataset(torch.Tensor(miniBatch, trainData.data:size(2), trainData.data:size(3), trainData.data:size(4)))
 
 if useGPU then
     print("\nConverting to CUDA types...")
-    local data = require("./dataset")
     require("cunn")
 
-    miniBatchData.data = miniBatchData.data:cuda()
-    miniBatchData.labels = miniBatchData.labels:cuda()
+    miniBatchData = miniBatchData:cuda()
     net = net:cuda()
     crit = crit:cuda()
 end
 
 print("\nNormalizing training data...")
-mean, stdev = prep.normalize(trainData.data)
+local mean, stdev = prep.normalize(trainData.data)
 
 print("\nNormalizing testing data...")
 testData.data[{{},{},{},{}}]:add(-mean)
 testData.data[{{},{},{},{}}]:div(stdev)
 
+--Reset epoch counter
+train._global_epochs = 1
+
 if makeGraph then
     --Make loggers to output graph files
-    trainLogger = optim.Logger(paths.concat("./logs/"..logFolder, 'train.log'))
-    testLogger = optim.Logger(paths.concat("./logs/"..logFolder, 'test.log'))
+    local trainLogger = optim.Logger(paths.concat("./logs/"..logFolder, 'train.log'))
+    local testLogger = optim.Logger(paths.concat("./logs/"..logFolder, 'test.log'))
 
     trainLogger:display(false)
     testLogger:display(false)

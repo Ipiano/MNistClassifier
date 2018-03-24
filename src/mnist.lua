@@ -83,7 +83,7 @@ function M.read_data( fileBase, dataSize )
 
     assert(images:size(1) == labels:size(1), "Image set and label set are different sizes")
 
-    out = data.make_dataset(images, labels)
+    out = data.Dataset(images, labels)
 
     return out
 end
