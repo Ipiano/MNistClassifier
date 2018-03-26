@@ -68,7 +68,7 @@ local function operateOnSet(src, processImage, hitsPerImage, useGPU)
     --Process items 1000 at a time
     --And when processing each one, make at most 1000 modified elements at once
     local miniSet = data.Dataset(torch.Tensor(100, src.data:size(2), src.data:size(3), src.data:size(4)))
-    local miniResults = torch.Tensor(100, src.data:size(2), src.data:size(3), src.data:size(4))
+    local miniResults = torch.Tensor(10000, src.data:size(2), src.data:size(3), src.data:size(4))
 
     if useGPU then
         require("cutorch")
@@ -80,6 +80,7 @@ local function operateOnSet(src, processImage, hitsPerImage, useGPU)
     local outputLabels = torch.Tensor()
 
     local batchNum = 1
+    local bufInd = 1
     --Processing a single batch of the input
     local process1Batch = function(batch)
 
@@ -88,13 +89,20 @@ local function operateOnSet(src, processImage, hitsPerImage, useGPU)
         for i=1, batch:size() do
             local todo = hitsPerImage
             while todo > 0 do
-                local did = math.min(todo, miniResults:size(1))
+                --print(todo.." images left to make")
+                local did = math.min(todo, miniResults:size(1)-bufInd + 1)
                 for j=1, did do
-                    processImage(batch.data[i], miniResults[j])
+                    processImage(batch.data[i], miniResults[bufInd])
+                    bufInd = bufInd + 1
                 end
+                --print("Did "..did)
 
-                --Copy results off gpu
-                outputImages = outputImages:cat(miniResults[{{1, did}}], 1)
+                if(bufInd == miniResults:size(1) + 1) then
+                    --print("Empty buffer")
+                    --Copy results off gpu
+                    outputImages = outputImages:cat(miniResults[{{1, bufInd-1}}], 1)
+                    bufInd = 1
+                end
 
                 --Reduce target goal
                 todo = todo - did
@@ -109,6 +117,13 @@ local function operateOnSet(src, processImage, hitsPerImage, useGPU)
     --Load batches of original data onto gpu
     --and process them
     miniSet:forMinibatches(process1Batch, src, true)
+
+    if bufInd > 1 then
+        --print("Empty buffer")
+        --Copy results off gpu
+        outputImages = outputImages:cat(miniResults[{{1, bufInd-1}}], 1)
+    end
+
     --print(outputImages:size())
     --print(outputLabels)
     return data.Dataset(outputImages, outputLabels)

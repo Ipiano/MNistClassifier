@@ -70,8 +70,10 @@ M.Dataset = function(data, labels, defaultLimit)
             end
         
             for i=1, math.ceil(src:size()/dst:reserved()) do
+                --print("Make minibatch "..i)
                 dst:minibatch(src, i, shuffle)
         
+                --print("Lambda")
                 lambda(dst)
         
                 t = math.min(t+dst:size(), src:size())
