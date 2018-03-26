@@ -19,7 +19,7 @@ local dataSize = 4294967296
 local epochs = 25
 
 --Declare all other arg variables
-local printedData, transforms, deforms, alpha, sigma, epoch_learning_mod, epoch_learning_mul, useGPU, makeGraph, profile, miniBatch
+local printedData, transforms, deforms, alpha, sigma, epoch_learning_mod, epoch_learning_mul, useGPU, makeGraph, profile, miniBatch, batchNormalize
 
 for i=1, table.getn(arg) do
 
@@ -32,6 +32,11 @@ for i=1, table.getn(arg) do
         printedData = printedData or 100
         printedData = math.floor(printedData)
         assert(dataSize >= 0, "Must have a positive image print count")
+    end
+
+    --Do batch normalization
+    if arg[i] == "--batchnorm" then
+        batchNormalize = true
     end
 
     --Limit training data to at most n
@@ -53,7 +58,7 @@ for i=1, table.getn(arg) do
     end
 
     --Create n elastic deformed versions of each training data
-    --Optional sigma and alpha; default 34, 4
+    --Optional sigma and alpha; default 4, 34
     if arg[i] == "--deforms" and i < table.getn(arg) then
         deforms = math.floor(tonumber(arg[i+1]))
         assert(deforms >= 0, "Must have a positive number of deforms")
@@ -121,6 +126,10 @@ if miniBatch then
     logFolder = logFolder.."_"..miniBatch.."-minibatch"
 end
 
+if batchNormalize then
+    logFolder = logFolder.."_-batchnorm"
+end
+
 if transforms then
     logFolder = logFolder.."_"..transforms.."-transforms"
 end
@@ -146,12 +155,17 @@ local testData = mnist.read_data("./data/t10k", 4294967296)
 miniBatch = miniBatch or trainData:size()
 
 --Verify that the minibatch size divides the training and testing set sizes
-assert(trainData:size() >= miniBatch and trainData:size() % miniBatch == 0, "Minibatch size must divide original training set size")
-assert(testData:size() >= miniBatch and testData:size() % miniBatch == 0, "Minibatch size must divide testing set size")
+if(trainData:size() < miniBatch) then miniBatch = trainData:size() end
+if(testData:size() < miniBatch) then miniBatch = testData:size() end
+
+assert(trainData:size() % miniBatch == 0, "Minibatch size must divide original training set size")
+assert(testData:size() % miniBatch == 0, "Minibatch size must divide testing set size")
 
 print("\nCreating neural net...")
-local net = build.build_mnist_net()
+local net = build.build_mnist_net(batchNormalize)
 local crit = criterion.build_mnist_criterion()
+
+print(net)
 
 local transformed
 local deformed
@@ -256,3 +270,5 @@ else
     print("\nTesting...")
     test.test_nn(net, testData, miniBatchData, testLogger)
 end
+
+torch.save("./logs/"..logFolder.."/weights.net", net:float())

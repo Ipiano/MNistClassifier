@@ -109,7 +109,8 @@ local function operateOnSet(src, processImage, hitsPerImage, useGPU)
     --Load batches of original data onto gpu
     --and process them
     miniSet:forMinibatches(process1Batch, src, true)
-
+    --print(outputImages:size())
+    --print(outputLabels)
     return data.Dataset(outputImages, outputLabels)
 end
 
