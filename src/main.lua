@@ -1,3 +1,5 @@
+require "lfs"
+
 local criterion = require("./criterion")
 local prep = require("./prep")
 local build = require("./build")
@@ -189,7 +191,6 @@ end
 
 if printedData then
     local images = require("./images")
-    require "lfs"
 
     lfs.mkdir("./images")
     lfs.mkdir("./images/testingImages")
@@ -247,6 +248,9 @@ testData.data[{{},{},{},{}}]:div(stdev)
 
 --Reset epoch counter
 train._global_epochs = 1
+
+lfs.mkdir("./logs")
+lfs.mkdir("./logs/"..logFolder)
 
 if makeGraph then
     --Make loggers to output graph files
