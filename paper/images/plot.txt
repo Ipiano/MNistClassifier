@@ -1,0 +1,16 @@
+set xrange [0:29]
+set yrange [0:29]
+
+unset xtics
+unset ytics
+
+set term svg
+
+set output "deform1.svg"
+plot "deform1.txt" using 1:2:3:4 with vectors head filled lt 1 notitle
+
+set output "deform2.svg"
+plot "deform2.txt" using 1:2:3:4 with vectors head filled lt 1 notitle
+
+set output "deform3.svg"
+plot "deform3.txt" using 1:2:3:4 with vectors head filled lt 1 notitle

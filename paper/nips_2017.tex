@@ -1,16 +1,6 @@
 \documentclass{article}
-
-% if you need to pass options to natbib, use, e.g.:
-% \PassOptionsToPackage{numbers, compress}{natbib}
-% before loading nips_2017
-%
-% to avoid loading the natbib package, add option nonatbib:
-% \usepackage[nonatbib]{nips_2017}
-
-\usepackage{nips_2017}
-
-% to compile a camera-ready version, add the [final] option, e.g.:
-% \usepackage[final]{nips_2017}
+ 
+\usepackage[final, nonatbib]{nips_2017}
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
@@ -20,48 +10,21 @@
 \usepackage{amsfonts}       % blackboard math symbols
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
+\usepackage{bookmark}
+\usepackage{graphicx}
+\usepackage{svg}
 
-\title{Formatting instructions for NIPS 2017}
+\graphicspath{{images/}}
+\svgpath{{images/}}
 
-% The \author macro works with any number of authors. There are two
-% commands used to separate the names and addresses of multiple
-% authors: \And and \AND.
-%
-% Using \And between authors leaves it to LaTeX to determine where to
-% break the lines. Using \AND forces a line break at that point. So,
-% if LaTeX puts 3 of 4 authors names on the first line, and the last
-% on the second line, try using \AND instead of \And before the third
-% author name.
+\title{Batch Normalization in Neural Networks Applied To Document Analysis}
 
 \author{
-  David S.~Hippocampus\thanks{Use footnote for providing further
-    information about author (webpage, alternative
-    address)---\emph{not} for acknowledging funding agencies.} \\
+  Andrew D.~Stelter \\
   Department of Computer Science\\
-  Cranberry-Lemon University\\
-  Pittsburgh, PA 15213 \\
-  \texttt{hippo@cs.cranberry-lemon.edu} \\
-  %% examples of more authors
-  %% \And
-  %% Coauthor \\
-  %% Affiliation \\
-  %% Address \\
-  %% \texttt{email} \\
-  %% \AND
-  %% Coauthor \\
-  %% Affiliation \\
-  %% Address \\
-  %% \texttt{email} \\
-  %% \And
-  %% Coauthor \\
-  %% Affiliation \\
-  %% Address \\
-  %% \texttt{email} \\
-  %% \And
-  %% Coauthor \\
-  %% Affiliation \\
-  %% Address \\
-  %% \texttt{email} \\
+  South Dakota School of Mines and Technology\\
+  Rapid City, SD, 57701 \\
+  \texttt{andrew.stelter@mines.sdsmt.edu} \\
 }
 
 \begin{document}
@@ -70,199 +33,102 @@
 \maketitle
 
 \begin{abstract}
-  The abstract paragraph should be indented \nicefrac{1}{2}~inch
-  (3~picas) on both the left- and right-hand margins. Use 10~point
-  type, with a vertical spacing (leading) of 11~points.  The word
-  \textbf{Abstract} must be centered, bold, and in point size 12. Two
-  line spaces precede the abstract. The abstract must be limited to
+  The abstract must be limited to
   one paragraph.
 \end{abstract}
 
-\section{Submission of papers to NIPS 2017}
+\section{Introduction}
 
-NIPS requires electronic submissions.  The electronic submission site
-is
-\begin{center}
-  \url{https://cmt.research.microsoft.com/NIPS2017/}
-\end{center}
+In the early 2000s, a Neural Nets were shown to be one of the best tools available for
+document analysis and handwriting recognition. 
+\cite{tay2001offline} \cite{sinha1999improved}
+In their 2003 paper, Simard 
+\cite{simard2003best} 
+outlined a general-purpose neural net architecture that
+is adequate for simple document analysis.
 
-Please read carefully the instructions below and follow them
-faithfully.
+In their work, Simard achieved a 4\% error rate using a simple convolutional neural net to recognized digits from the MNIST 
+\cite{mnist}
+data set. Since the publishing of that paper, new general-purpose techniques have been developed which can be used to expand that architecture. In this paper, we compare that neural net's performance to the performance of one using one of those new techniques.
 
-\subsection{Style}
+The technique in question is batch normalization as presented in 2015 by Sergey Ioffe and Christian Szegedy. 
+\cite{ioffe2015batch}
+Batch normalization can be used to accelerate the learning of neural nets by normalizing each batch of training data after each layer of the network. Doing this allows the gradients at each step to be independent of the data and gradients in other steps; this in turn allows the neurons of the neural net to learn at different rates.
 
-Papers to be submitted to NIPS 2017 must be prepared according to the
-instructions presented here. Papers may only be up to eight pages
-long, including figures. This does not include acknowledgments and 
-cited references which are allowed on subsequent pages.
-Papers that exceed these limits will not be reviewed, or in any
-other way considered for presentation at the conference.
+We found...
 
-The margins in 2017 are the same as since 2007, which allow for
-$\sim$$15\%$ more words in the paper compared to earlier years.
+\section{Methods}
+In the original paper by Simard, it is indicated that they developed the neural network from scratch. We made the decision to use one of the many neural network frameworks which has been put together since that paper. The framework which was chosen is Torch. 
+\cite{torch}
 
-Authors are required to use the NIPS \LaTeX{} style files obtainable
-at the NIPS website as indicated below. Please make sure you use the
-current files and not previous versions. Tweaking the style files may
-be grounds for rejection.
+Using Torch allowed rapid development of a neural network to process the MNIST database. In fact, the Torch project provides a neural net to do this as one of its example projects. While this example proved invaluable while learning how to use Torch, it did not follow the architecture laid out by Simard, so it was ultimately only useful for seeing how a Torch neural net program might be structured.
 
-\subsection{Retrieval of style files}
+\subsection{Expanding the Dataset}
+In their original paper, Simard outlines a number of methods used to expand the training dataset. They used both affine transformations and elastic deformations to created noisy and warped versions of the original images. The Torch Images library provides functionality for part of this process, thus we did not need to recreate the entire algorithm form applying affine transforms and elastic deformations to an image. We tested the neural net by producing four sets of training data:
+\begin{itemize}
+  \item The original MNIST dataset
+  \item The original MNIST dataset and some transformed versions of each image
+  \item The original MNIST dataset and some deformed versions of each image
+  \item The original MNIST dataset and both transformed and deformed versions of each image
+\end{itemize}
 
-The style files for NIPS and other conference information are
-available on the World Wide Web at
-\begin{center}
-  \url{http://www.nips.cc/}
-\end{center}
-The file \verb+nips_2017.pdf+ contains these instructions and
-illustrates the various formatting requirements your NIPS paper must
-satisfy.
+\subsubsection{Transforming the Images}
+Simard does not outline the specific rules used to generate their affine transformations. We picked a number of rules and used them to generate random 2x2 transformation matrices which could then be applied to the images. Each transform consisted of the following elements:
+\begin{itemize}
+  \item A random rotation in the range $\pm\frac{\pi}{16}$ radians
+  \item A random shearing in both the x and y dimensions of $\pm 0.125$
+  \item A random scaling in both the x and y dimensions of $\pm 0.25$
+\end{itemize}
 
-The only supported style file for NIPS 2017 is \verb+nips_2017.sty+,
-rewritten for \LaTeXe{}.  \textbf{Previous style files for \LaTeX{}
-  2.09, Microsoft Word, and RTF are no longer supported!}
+These are the ranges which were found to generate as much variance in the images as possible without changing them to the point of being unrecognizable. Some examples transformations can be seen in Figure~\ref{fig:transforms}.
 
-The new \LaTeX{} style file contains two optional arguments:
-\verb+final+, which creates a camera-ready copy, and \verb+nonatbib+,
-which will not load the \verb+natbib+ package for you in case of
-package clash.
-
-At submission time, please omit the \verb+final+ option. This will
-anonymize your submission and add line numbers to aid review.  Please
-do \emph{not} refer to these line numbers in your paper as they will
-be removed during generation of camera-ready copies.
-
-The file \verb+nips_2017.tex+ may be used as a ``shell'' for writing
-your paper. All you have to do is replace the author, title, abstract,
-and text of the paper with your own.
-
-The formatting instructions contained in these style files are
-summarized in Sections \ref{gen_inst}, \ref{headings}, and
-\ref{others} below.
-
-\section{General formatting instructions}
-\label{gen_inst}
-
-The text must be confined within a rectangle 5.5~inches (33~picas)
-wide and 9~inches (54~picas) long. The left margin is 1.5~inch
-(9~picas).  Use 10~point type with a vertical spacing (leading) of
-11~points.  Times New Roman is the preferred typeface throughout, and
-will be selected for you by default.  Paragraphs are separated by
-\nicefrac{1}{2}~line space (5.5 points), with no indentation.
-
-The paper title should be 17~point, initial caps/lower case, bold,
-centered between two horizontal rules. The top rule should be 4~points
-thick and the bottom rule should be 1~point thick. Allow
-\nicefrac{1}{4}~inch space above and below the title to rules. All
-pages should start at 1~inch (6~picas) from the top of the page.
-
-For the final version, authors' names are set in boldface, and each
-name is centered above the corresponding address. The lead author's
-name is to be listed first (left-most), and the co-authors' names (if
-different address) are set to follow. If there is only one co-author,
-list both author and co-author side by side.
-
-Please pay special attention to the instructions in Section \ref{others}
-regarding figures, tables, acknowledgments, and references.
-
-\section{Headings: first level}
-\label{headings}
-
-All headings should be lower case (except for first word and proper
-nouns), flush left, and bold.
-
-First-level headings should be in 12-point type.
-
-\subsection{Headings: second level}
-
-Second-level headings should be in 10-point type.
-
-\subsubsection{Headings: third level}
-
-Third-level headings should be in 10-point type.
-
-\paragraph{Paragraphs}
-
-There is also a \verb+\paragraph+ command available, which sets the
-heading in bold, flush left, and inline with the text, with the
-heading followed by 1\,em of space.
-
-\section{Citations, figures, tables, references}
-\label{others}
-
-These instructions apply to everyone.
-
-\subsection{Citations within the text}
-
-The \verb+natbib+ package will be loaded for you by default.
-Citations may be author/year or numeric, as long as you maintain
-internal consistency.  As to the format of the references themselves,
-any style is acceptable as long as it is used consistently.
-
-The documentation for \verb+natbib+ may be found at
-\begin{center}
-  \url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
-\end{center}
-Of note is the command \verb+\citet+, which produces citations
-appropriate for use in inline text.  For example,
-\begin{verbatim}
-   \citet{hasselmo} investigated\dots
-\end{verbatim}
-produces
-\begin{quote}
-  Hasselmo, et al.\ (1995) investigated\dots
-\end{quote}
-
-If you wish to load the \verb+natbib+ package with options, you may
-add the following before loading the \verb+nips_2017+ package:
-\begin{verbatim}
-   \PassOptionsToPackage{options}{natbib}
-\end{verbatim}
-
-If \verb+natbib+ clashes with another package you load, you can add
-the optional argument \verb+nonatbib+ when loading the style file:
-\begin{verbatim}
-   \usepackage[nonatbib]{nips_2017}
-\end{verbatim}
-
-As submission is double blind, refer to your own published work in the
-third person. That is, use ``In the previous work of Jones et
-al.\ [4],'' not ``In our previous work [4].'' If you cite your other
-papers that are not widely available (e.g., a journal paper under
-review), use anonymous author names in the citation, e.g., an author
-of the form ``A.\ Anonymous.''
-
-\subsection{Footnotes}
-
-Footnotes should be used sparingly.  If you do require a footnote,
-indicate footnotes with a number\footnote{Sample of the first
-  footnote.} in the text. Place the footnotes at the bottom of the
-page on which they appear.  Precede the footnote with a horizontal
-rule of 2~inches (12~picas).
-
-Note that footnotes are properly typeset \emph{after} punctuation
-marks.\footnote{As in this example.}
-
-\subsection{Figures}
-
-All artwork must be neat, clean, and legible. Lines should be dark
-enough for purposes of reproduction. The figure number and caption
-always appear after the figure. Place one line space before the figure
-caption and one line space after the figure. The figure caption should
-be lower case (except for first word and proper nouns); figures are
-numbered consecutively.
-
-You may use color figures.  However, it is best for the figure
-captions and the paper body to be legible if the paper is printed in
-either black/white or in color.
-\begin{figure}[h]
+\begin{figure}
   \centering
-  \fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-  \caption{Sample figure caption.}
+  \includegraphics[width=0.15\textwidth]{original.png}
+  \includegraphics[width=0.15\textwidth]{transform1.png}\\
+  \includegraphics[width=0.15\textwidth]{transform2.png}
+  \includegraphics[width=0.15\textwidth]{transform3.png}
+  \label{fig:transforms}
+  \caption{One of the original images (top left) and some examples of its affine tranformations}
 \end{figure}
+
+\subsubsection{Warping the Images}
+
+As stated above, the Torch Images library provides much of the functionality needed to recreate the elastic deformations described by Simard. Their description of the process described convolving two delta fields $\delta x$ and $\delta y$ with a gaussian of some standard deviation $\sigma$. The resulting displacement field could be scaled by some $\alpha$ and then applied to the original image to warp it.
+
+Using the Torch Image library simplified this process greatly, and we were able to quickly start creating deformed data sets to test with. At the recommendation of Simard, we used $\sigma=4$ and $\alpha=34$; however, it is unknown whether or not the displacement fields produced through Torch were analogous to the ones produced by their algorithm. Some example vector fields and their resulting deformations can be seen in Figure~\ref{fig:deforms}.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.15\textwidth]{original.png}
+  \includesvg[width=0.2\textwidth]{deform1.svg}
+  \includegraphics[width=0.15\textwidth]{deform1.png}\\
+  \includesvg[width=0.2\textwidth]{deform2.svg}
+  \includegraphics[width=0.15\textwidth]{deform2.png}
+  \includesvg[width=0.2\textwidth]{deform3.svg}
+  \includegraphics[width=0.15\textwidth]{deform3.png}
+  \label{fig:deforms}
+  \caption{One of the original images (top left) and vector fields with their resulting deformations. In order: $\sigma=0.001$, $\sigma=4$, and $\sigma=30$}
+\end{figure}
+
+\subsection{Network Architecture}
+The network architecture outlined by Simard can be described succinctly as a feature extractor followed by a universal classifier. The feature extraction portion consisted of two spatial convolution layers, each having a kernel of size 5. This reduced the input image from 29x29 pixels to 5x5 pixels. The first layer of convolution output 5 planes size 13x13, and the second layer produced 50 planes. The universal classifier is described as two fully connected layers of neurons, sizes 100 and 10 respectively, with the layer of 10 being the output layer. The final error calculation was done using both Mean-Squared-Error and Cross-Entropy calculations.
+
+Building the same neural net in Torch was fairly simple; however, a couple of minor changes were made as a result. The biggest difference was the connection between the feature extractor and the classifier. The feature extraction ended with a total of 1250 pixels in all of its planes combined. In order to feed this data into the universal classifier, an extra fully connected layer of the same size had to be added between the extractor and the classifier. The second change was that we tested only with a cross-entropy error calculation; mean-squared-error was not tested in this project. Finally, Simard does not note the transfer function used between the layers of his net. At the recommendation of the Torch quickstart tutorial \cite{torchTutorial} for identifying images in the CIFAR data set \cite{krizhevsky2009learning}, we used a ReLU transfer function between all layers of the neural net.
+
+\subsection{Batch Normalization}
+The main goal of this project was to determine how batch normalization as described by Ioffe and Szegedy would affect the network laid out by Simard. To this end, we made use of the Torch SpatialBatchNormalization and BatchNormalization layers after the convolution layers and linear layers, respectively. These layers were allowed to learn their $\beta$ and $\gamma$ parameters during training; the values were not taken from the dataset or provided as constants.
+
+The power of batch normalization comes from training the neural net on small sets of the full training set known as minibatches. For each epoch trained, a random permutation of the full training set was generated. Then minibatches were made by taking sequential groups of $n$ items. Each minibatch was trained during that epoch as if it were a full training set. Picking minibatch sizes can be difficult and depends on the application of the neural net, so we tested our net using multiples of 100 up to 1000 which evenly divided the full training set size to see what yielded the best result.
+
+
+\section{Results}
+
+\section{Analysis}
 
 \subsection{Tables}
 
-All tables must be centered, neat, clean and legible.  The table
+The table
 number and title always appear before the table.  See
 Table~\ref{sample-table}.
 
@@ -281,7 +147,6 @@ This package was used to typeset Table~\ref{sample-table}.
 
 \begin{table}[t]
   \caption{Sample table title}
-  \label{sample-table}
   \centering
   \begin{tabular}{lll}
     \toprule
@@ -294,111 +159,11 @@ This package was used to typeset Table~\ref{sample-table}.
     Soma     & Cell body       & up to $10^6$  \\
     \bottomrule
   \end{tabular}
+  \label{sample-table}
 \end{table}
 
-\section{Final instructions}
-
-Do not change any aspects of the formatting parameters in the style
-files.  In particular, do not modify the width or length of the
-rectangle the text should fit into, and do not change font sizes
-(except perhaps in the \textbf{References} section; see below). Please
-note that pages should be numbered.
-
-\section{Preparing PDF files}
-
-Please prepare submission files with paper size ``US Letter,'' and
-not, for example, ``A4.''
-
-Fonts were the main cause of problems in the past years. Your PDF file
-must only contain Type 1 or Embedded TrueType fonts. Here are a few
-instructions to achieve this.
-
-\begin{itemize}
-
-\item You should directly generate PDF files using \verb+pdflatex+.
-
-\item You can check which fonts a PDF files uses.  In Acrobat Reader,
-  select the menu Files$>$Document Properties$>$Fonts and select Show
-  All Fonts. You can also use the program \verb+pdffonts+ which comes
-  with \verb+xpdf+ and is available out-of-the-box on most Linux
-  machines.
-
-\item The IEEE has recommendations for generating PDF files whose
-  fonts are also acceptable for NIPS. Please see
-  \url{http://www.emfield.org/icuwb2010/downloads/IEEE-PDF-SpecV32.pdf}
-
-\item \verb+xfig+ "patterned" shapes are implemented with bitmap
-  fonts.  Use "solid" shapes instead.
-
-\item The \verb+\bbold+ package almost always uses bitmap fonts.  You
-  should use the equivalent AMS Fonts:
-\begin{verbatim}
-   \usepackage{amsfonts}
-\end{verbatim}
-followed by, e.g., \verb+\mathbb{R}+, \verb+\mathbb{N}+, or
-\verb+\mathbb{C}+ for $\mathbb{R}$, $\mathbb{N}$ or $\mathbb{C}$.  You
-can also use the following workaround for reals, natural and complex:
-\begin{verbatim}
-   \newcommand{\RR}{I\!\!R} %real numbers
-   \newcommand{\Nat}{I\!\!N} %natural numbers
-   \newcommand{\CC}{I\!\!\!\!C} %complex numbers
-\end{verbatim}
-Note that \verb+amsfonts+ is automatically loaded by the
-\verb+amssymb+ package.
-
-\end{itemize}
-
-If your file contains type 3 fonts or non embedded TrueType fonts, we
-will ask you to fix it.
-
-\subsection{Margins in \LaTeX{}}
-
-Most of the margin problems come from figures positioned by hand using
-\verb+\special+ or other commands. We suggest using the command
-\verb+\includegraphics+ from the \verb+graphicx+ package. Always
-specify the figure width as a multiple of the line width as in the
-example below:
-\begin{verbatim}
-   \usepackage[pdftex]{graphicx} ...
-   \includegraphics[width=0.8\linewidth]{myfile.pdf}
-\end{verbatim}
-See Section 4.4 in the graphics bundle documentation
-(\url{http://mirrors.ctan.org/macros/latex/required/graphics/grfguide.pdf})
-
-A number of width problems arise when \LaTeX{} cannot properly
-hyphenate a line. Please give LaTeX hyphenation hints using the
-\verb+\-+ command when necessary.
-
-\subsubsection*{Acknowledgments}
-
-Use unnumbered third level headings for the acknowledgments. All
-acknowledgments go at the end of the paper. Do not include
-acknowledgments in the anonymized submission, only in the final paper.
-
-\section*{References}
-
-References follow the acknowledgments. Use unnumbered first-level
-heading for the references. Any choice of citation style is acceptable
-as long as you are consistent. It is permissible to reduce the font
-size to \verb+small+ (9 point) when listing the references. {\bf
-  Remember that you can go over 8 pages as long as the subsequent ones contain
-  \emph{only} cited references.}
-\medskip
-
-\small
-
-[1] Alexander, J.A.\ \& Mozer, M.C.\ (1995) Template-based algorithms
-for connectionist rule extraction. In G.\ Tesauro, D.S.\ Touretzky and
-T.K.\ Leen (eds.), {\it Advances in Neural Information Processing
-  Systems 7}, pp.\ 609--616. Cambridge, MA: MIT Press.
-
-[2] Bower, J.M.\ \& Beeman, D.\ (1995) {\it The Book of GENESIS:
-  Exploring Realistic Neural Models with the GEneral NEural SImulation
-  System.}  New York: TELOS/Springer--Verlag.
-
-[3] Hasselmo, M.E., Schnell, E.\ \& Barkai, E.\ (1995) Dynamics of
-learning and recall at excitatory recurrent synapses and cholinergic
-modulation in rat hippocampal region CA3. {\it Journal of
-  Neuroscience} {\bf 15}(7):5249-5262.
+\section{References}
+\bibliographystyle{IEEEtran}
+\bibliography{sources}
 
 \end{document}
