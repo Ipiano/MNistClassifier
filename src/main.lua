@@ -144,7 +144,6 @@ if epoch_learning_mul then
     logFolder = logFolder.."_learningmultiplier-"..epoch_learning_mul.."-"..epoch_learning_mod
 end
 
-
 print("Loading training data...")
 local trainData = mnist.read_data("./data/train", dataSize)
 
@@ -251,6 +250,8 @@ train._global_epochs = 1
 
 lfs.mkdir("./logs")
 lfs.mkdir("./logs/"..logFolder)
+
+print("Begin Training: "..logFolder)
 
 if makeGraph then
     --Make loggers to output graph files

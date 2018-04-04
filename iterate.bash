@@ -33,7 +33,7 @@ itermini
 #iterdeform
 
 args="$args --batchnorm"
-
+echo "$args"
 itermini
 #iterlearn
 #iterdeform
