@@ -1,5 +1,5 @@
 \documentclass{article}
-
+ 
 \usepackage[final, nonatbib]{nips_2017}
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
@@ -11,6 +11,11 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{bookmark}
+\usepackage{graphicx}
+\usepackage{svg}
+
+\graphicspath{{images/}}
+\svgpath{{images/}}
 
 \title{Batch Normalization in Neural Networks Applied To Document Analysis}
 
@@ -75,30 +80,51 @@ Simard does not outline the specific rules used to generate their affine transfo
   \item A random scaling in both the x and y dimensions of $\pm 0.25$
 \end{itemize}
 
-These are the ranges which were found to generate as much variance in the images as possible without warping them to the point of being unrecognizable.
+These are the ranges which were found to generate as much variance in the images as possible without changing them to the point of being unrecognizable. Some examples transformations can be seen in Figure~\ref{fig:transforms}.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.15\textwidth]{original.png}
+  \includegraphics[width=0.15\textwidth]{transform1.png}\\
+  \includegraphics[width=0.15\textwidth]{transform2.png}
+  \includegraphics[width=0.15\textwidth]{transform3.png}
+  \label{fig:transforms}
+  \caption{One of the original images (top left) and some examples of its affine tranformations}
+\end{figure}
 
 \subsubsection{Warping the Images}
 
 As stated above, the Torch Images library provides much of the functionality needed to recreate the elastic deformations described by Simard. Their description of the process described convolving two delta fields $\delta x$ and $\delta y$ with a gaussian of some standard deviation $\sigma$. The resulting displacement field could be scaled by some $\alpha$ and then applied to the original image to warp it.
 
-Using the Torch Image library simplified this process greatly, and we were able to quickly start creating deformed data sets to test with. At the recommendation of Simard, we used $\sigma=4$ and $\alpha=34$; however, it is unknown whether or not the displacement fields produced through Torch were analogous to the ones produced by their algorithm.
+Using the Torch Image library simplified this process greatly, and we were able to quickly start creating deformed data sets to test with. At the recommendation of Simard, we used $\sigma=4$ and $\alpha=34$; however, it is unknown whether or not the displacement fields produced through Torch were analogous to the ones produced by their algorithm. Some example vector fields and their resulting deformations can be seen in Figure~\ref{fig:deforms}.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.15\textwidth]{original.png}
+  \includesvg[width=0.2\textwidth]{deform1.svg}
+  \includegraphics[width=0.15\textwidth]{deform1.png}\\
+  \includesvg[width=0.2\textwidth]{deform2.svg}
+  \includegraphics[width=0.15\textwidth]{deform2.png}
+  \includesvg[width=0.2\textwidth]{deform3.svg}
+  \includegraphics[width=0.15\textwidth]{deform3.png}
+  \label{fig:deforms}
+  \caption{One of the original images (top left) and vector fields with their resulting deformations. In order: $\sigma=0.001$, $\sigma=4$, and $\sigma=30$}
+\end{figure}
 
 \subsection{Network Architecture}
+The network architecture outlined by Simard can be described succinctly as a feature extractor followed by a universal classifier. The feature extraction portion consisted of two spatial convolution layers, each having a kernel of size 5. This reduced the input image from 29x29 pixels to 5x5 pixels. The first layer of convolution output 5 planes size 13x13, and the second layer produced 50 planes. The universal classifier is described as two fully connected layers of neurons, sizes 100 and 10 respectively, with the layer of 10 being the output layer. The final error calculation was done using both Mean-Squared-Error and Cross-Entropy calculations.
+
+Building the same neural net in Torch was fairly simple; however, a couple of minor changes were made as a result. The biggest difference was the connection between the feature extractor and the classifier. The feature extraction ended with a total of 1250 pixels in all of its planes combined. In order to feed this data into the universal classifier, an extra fully connected layer of the same size had to be added between the extractor and the classifier. The second change was that we tested only with a cross-entropy error calculation; mean-squared-error was not tested in this project. Finally, Simard does not note the transfer function used between the layers of his net. At the recommendation of the Torch quickstart tutorial \cite{torchTutorial} for identifying images in the CIFAR data set \cite{krizhevsky2009learning}, we used a ReLU transfer function between all layers of the neural net.
 
 \subsection{Batch Normalization}
-The main piece of this project was to determine how batch normalization as described by Ioffe and Szegedy would affect the network laid out by Simard. To this end, we made use of the Torch SpatialBatchNormalization and BatchNormalization layers after the convolution layers and linear layers, respectively. These layers were allowed to learn their $\beta$ and $\gamma$ parameters during training; the values were not taken from the dataset or provided as constants.
+The main goal of this project was to determine how batch normalization as described by Ioffe and Szegedy would affect the network laid out by Simard. To this end, we made use of the Torch SpatialBatchNormalization and BatchNormalization layers after the convolution layers and linear layers, respectively. These layers were allowed to learn their $\beta$ and $\gamma$ parameters during training; the values were not taken from the dataset or provided as constants.
 
 The power of batch normalization comes from training the neural net on small sets of the full training set known as minibatches. For each epoch trained, a random permutation of the full training set was generated. Then minibatches were made by taking sequential groups of $n$ items. Each minibatch was trained during that epoch as if it were a full training set. Picking minibatch sizes can be difficult and depends on the application of the neural net, so we tested our net using multiples of 100 up to 1000 which evenly divided the full training set size to see what yielded the best result.
+
+
 \section{Results}
 
 \section{Analysis}
-
-\subsection{Figures}
-
-The figure number and caption
-always appear after the figure. Place one line space before the figure
-caption and one line space after the figure. The figure caption should
-be lower case (except for first word and proper nouns); 
 
 \subsection{Tables}
 
