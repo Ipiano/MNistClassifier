@@ -1,0 +1,5 @@
+isexist = system("file "._file." | grep cannot")
+
+if(strlen(isexist) == 0) {
+    load "plot-data.gplt"
+}

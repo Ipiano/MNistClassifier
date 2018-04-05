@@ -1,0 +1,57 @@
+set term svg
+
+titleData = "Base Data"
+titleBatch = "No Batch Normalize"
+fileBase = "./logs/250-epochs_4294967296-data_%i-minibatch"
+
+if(exists("batch")) {
+    titleBatch = "Batch Normalized"
+    fileBase = fileBase."_-batchnorm"
+}
+
+if(exists("deforms") && exists("transforms")) {
+    titleData = "Deforms and Transforms"
+    fileBase = fileBase."_5-transforms_5-deforms-4-34"
+} else {
+    if(exists("deforms")) {
+        titleData = "Deforms"
+        fileBase = fileBase."_10-deforms-4-34"
+    } else {
+        if(exists("transforms")) {
+            titleData = "Transforms"
+            fileBase = fileBase."_10-transforms"
+        }
+    }
+}
+
+fileBase = fileBase."/test.log"
+graphtitle = titleData." - ".titleBatch
+
+if(exists("graphtitle")) {
+    set title graphtitle
+
+    cmd="echo ".graphtitle." | sed -e 's/ /_/g'"
+    name=system(cmd)
+
+    set output name.".svg"
+}
+
+set xlabel "Epochs"
+set ylabel "Correct %"
+
+set key right bottom
+
+plotcommand = "plot "
+do for [i=0:1000] {
+    modulus = i-(floor(i/100)*100)
+    if(modulus == 0) {
+        _file = sprintf(fileBase, i)
+        
+        _title = sprintf("Minibatch %i", i)
+
+        load "plot-if-valid.gplt"
+    }
+};
+
+print plotcommand
+eval(plotcommand)
