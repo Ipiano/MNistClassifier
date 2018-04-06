@@ -1,8 +1,8 @@
 print "plotting "._file
 
 if(exists("notfirst")) {
-    plotcommand = plotcommand.", \""._file."\" using (column(0)):1 with lines title \""._title."\""
+    plotcommand = plotcommand.", \""._file."\" using (column(0)):1 with lines title \""._title."\" lw 4"
 } else {
     notfirst = 1
-    plotcommand = plotcommand."\""._file."\" using (column(0)):1 with lines title \""._title."\""
+    plotcommand = plotcommand."\""._file."\" using (column(0)):1 with lines title \""._title."\" lw 4"
 }

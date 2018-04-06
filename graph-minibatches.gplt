@@ -1,4 +1,4 @@
-set term svg
+set term eps
 
 titleData = "Base Data"
 titleBatch = "No Batch Normalize"
@@ -30,10 +30,10 @@ graphtitle = titleData." - ".titleBatch
 if(exists("graphtitle")) {
     set title graphtitle
 
-    cmd="echo ".graphtitle." | sed -e 's/ /_/g'"
+    cmd="echo ".graphtitle." | sed -e 's/ /-/g'"
     name=system(cmd)
 
-    set output name.".svg"
+    set output "./paper/images/".name.".eps"
 }
 
 set xlabel "Epochs"

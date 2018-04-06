@@ -1,0 +1,48 @@
+set term eps
+
+if(!exists("batchsize")) {
+    batchsize = 100
+}
+graphtitle = sprintf("Minibatch Size - %i", batchsize)
+set title graphtitle
+
+cmd="echo ".graphtitle." | sed -e 's/ /-/g'"
+name=system(cmd)
+
+set output "./paper/images/".name.".eps"
+
+set xlabel "Epochs"
+set ylabel "Correct %"
+
+set key right bottom
+
+list = system(sprintf("ls ./logs | grep _%i-minibatch", batchsize))
+
+if(words(list) > 0) {
+    plotcommand = "plot "
+    do for [file in list] {
+        _file = "./logs/".file."/test.log"
+        _title = " MNIST "
+
+        if(strstrt(file, "deform") > 0){ _title = _title." Deforms " };
+        if(strstrt(file, "transform") > 0){ _title = _title." Transforms " };
+        if(strstrt(file, "batchnorm") > 0){ _title = _title." Batch-Norm " };
+        parts = words(_title)
+        finalTitle=""
+        i=0
+        do for[word in _title] {
+            finalTitle = finalTitle.word
+            if(i < parts-1){ finalTitle=finalTitle."/" }
+            i=i+1
+        }
+        _title = finalTitle
+
+        print _file
+        print _title
+        print finalTitle
+        load "plot-if-valid.gplt"
+    };
+
+    print plotcommand
+    eval(plotcommand)
+}

@@ -1,2 +1,8 @@
 data/*
 images/*
+paper/images/*
+paper/svg-inkscape/*
+paper/nips*
+!paper/nips_2017.tex
+!paper/nips_2017.pdf
+scores.txt
