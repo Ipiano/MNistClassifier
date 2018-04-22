@@ -41,8 +41,8 @@ for i in logs/* ; do
 done
 
 echo "---------------------------------------------------"
-echo "Best Training Set: $bestTrainDir => $bestTrainScore"
+#echo "Best Training Set: $bestTrainDir => $bestTrainScore"
 echo "Best Testing Set: $bestTestDir => $bestTestScore"
 echo "---------------------------------------------------"
-echo "Worst Training Set: $worstTrainDir => $worstTrainScore"
+#echo "Worst Training Set: $worstTrainDir => $worstTrainScore"
 echo "Worst Testing Set: $worstTestDir => $worstTestScore"

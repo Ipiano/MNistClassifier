@@ -4,6 +4,7 @@ args="$@"
 
 function itermini {
     for i in {100..1000..100}; do
+        th ./src/main.lua $args --minibatch $i
         th ./src/main.lua $args --minibatch $i --deforms 10
         th ./src/main.lua $args --minibatch $i --transforms 10
         th ./src/main.lua $args --minibatch $i --deforms 5 --transforms 5

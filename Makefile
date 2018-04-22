@@ -14,8 +14,8 @@ $(info "$(DATAZIPS)")
 
 .PHONY: mkdirs installdeps
 
-all: $(DATAFILES) | installdeps
-
+all: data | installdeps
+data: $(DATAFILES)
 installdeps: $(LUADEPS)
 
 $(LUADEPS): %:
