@@ -54,7 +54,7 @@ Running the main file will load the data set (Training and testing), build the N
 * ```--make_images [n]```: Will output the first n images of the training set, modifications to the training set, and the testing set in the directory ```images/```. n is default 100. Requires GraphicsMagick and the ```graphicsmagick``` lua package.
 
 ## Paper
-The research paper and all extra images (other than graphs) associated with this project can be found in the directory ```paper/```. The paper is named ```nips_2017```, the default name of the 2017 NIPS LaTeX file. A pre-built copy of the file has been included in the repository for convenience. Building the paper requires
+The research paper and all extra images (other than graphs) associated with this project can be found in the directory ```paper/```. The paper is named ```nips_2017```, the default name of the 2017 NIPS LaTeX file. A pre-built copy of the file has been included in the repository for convenience; it is found at ```paper/nips_2017.pdf```. Building the paper requires
 * The TexLive Distribution
 * Inkscape installed (to auto-convert .svg files)
 
